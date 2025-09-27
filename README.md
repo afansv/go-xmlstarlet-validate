@@ -3,6 +3,8 @@
 Go wrapper for [`xmlstarlet`](http://xmlstar.sourceforge.net/) that allows validating XML documents against **XSD**, **DTD**, or **RelaxNG** schemas.
 The package supports both file-based and stream-based validation and returns structured errors with precise positions.
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/afansv/go-xmlstarlet-validate.svg)](https://pkg.go.dev/github.com/afansv/go-xmlstarlet-validate)
+
 ### Features
 
 * Validate XML documents against:
@@ -10,8 +12,7 @@ The package supports both file-based and stream-based validation and returns str
     * **XSD**
     * **DTD**
     * **RelaxNG**
-* Validate by file
-* names or `io.Reader` streams.
+* Validate by file names or `io.Reader` streams.
 * Collect structured validation errors:
 
     * file name
