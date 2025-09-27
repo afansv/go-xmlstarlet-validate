@@ -67,8 +67,8 @@ func NewSchemaFromReader(r io.Reader, schemaType SchemaType) (*Schema, error) {
 	}, nil
 }
 
-// ValidateFromReaderAgainstSchema validates data from io.Reader against Schema
-func ValidateFromReaderAgainstSchema(s *Schema, r io.Reader, stopOnFirstErr bool) (ValidateResult, error) {
+// ValidateFromReader validates data from io.Reader against Schema
+func ValidateFromReader(s *Schema, r io.Reader, stopOnFirstErr bool) (ValidateResult, error) {
 	data, err := io.ReadAll(r)
 	if err != nil {
 		return ValidateResult{}, fmt.Errorf("readall: %w", err)

@@ -78,7 +78,7 @@ Options:
 3. Manual
 
   * Download from [xmlstar.sourceforge.net](http://xmlstar.sourceforge.net/download.php)
-  * Extract and add the folder with `xml.exe` (or `xmlstarlet.exe`) to your system `PATH`.
+  * Extract and add the folder with `xmlstarlet.exe` to your system `PATH`.
 
 
 ### Installation
@@ -109,11 +109,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer schema.Clean()
+	defer schema.Cleanup()
 
 	// Validate XML string
 	xml := `<root><invalid/></root>`
-	result, err := validate.ValidateFromReaderAgainstSchema(schema, strings.NewReader(xml), false)
+	result, err := validate.ValidateFromReader(schema, strings.NewReader(xml), false)
 	if err != nil {
 		panic(err)
 	}
