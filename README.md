@@ -125,5 +125,10 @@ func main() {
 			fmt.Printf("%s:%d.%d: %s\n", p.Filename, p.Line, p.Col, p.Issue)
 		}
 	}
+	
+	// or
+	if err := result.Err(); err != nil {
+		fmt.Println(fmt.Errorf("validate xml: %w", err))
+	}
 }
 ```

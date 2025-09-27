@@ -1,6 +1,7 @@
 package xmlstarlet_validate
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -19,6 +20,25 @@ type ResultProblem struct {
 type ValidateResult struct {
 	Problems []ResultProblem
 	Valid    bool
+}
+
+// Err returns combined error with all problems found.
+// It returns nil if content is valid
+func (r ValidateResult) Err() error {
+	if r.Valid {
+		return nil
+	}
+	var errs []error
+	for _, p := range r.Problems {
+		errs = append(
+			errs,
+			fmt.Errorf("%s (line: %d, col: %d)", p.Issue, p.Line, p.Col),
+		)
+	}
+	if len(errs) == 0 {
+		return fmt.Errorf("content is invalid, but it is not possible to determine why")
+	}
+	return errors.Join(errs...)
 }
 
 type SchemaType int
