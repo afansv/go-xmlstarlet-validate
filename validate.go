@@ -43,11 +43,6 @@ func (s *Schema) Cleanup() error {
 // NewSchemaFromReader creates new Schema instance with SchemaType from io.Reader.
 // Remember to call Schema.Cleanup after stop working with Schema.
 func NewSchemaFromReader(r io.Reader, schemaType SchemaType) (*Schema, error) {
-	data, err := io.ReadAll(r)
-	if err != nil {
-		return nil, fmt.Errorf("readall: %w", err)
-	}
-
 	f, err := os.CreateTemp("", "go-xmlstarlet-validate-schema-sch-*.xml")
 	if err != nil {
 		return nil, fmt.Errorf("create temp: %w", err)
@@ -55,12 +50,9 @@ func NewSchemaFromReader(r io.Reader, schemaType SchemaType) (*Schema, error) {
 	defer func(f *os.File) {
 		_ = f.Close()
 	}(f)
-
-	_, err = f.Write(data)
-	if err != nil {
-		return nil, fmt.Errorf("write to temp file: %w", err)
+	if _, err = io.Copy(f, r); err != nil {
+		return nil, fmt.Errorf("copy from reader to temp file: %w", err)
 	}
-
 	return &Schema{
 		file:       f,
 		schemaType: schemaType,
@@ -69,28 +61,19 @@ func NewSchemaFromReader(r io.Reader, schemaType SchemaType) (*Schema, error) {
 
 // ValidateFromReader validates data from io.Reader against Schema
 func ValidateFromReader(s *Schema, r io.Reader, stopOnFirstErr bool) (ValidateResult, error) {
-	data, err := io.ReadAll(r)
-	if err != nil {
-		return ValidateResult{}, fmt.Errorf("readall: %w", err)
-	}
-
 	f, err := os.CreateTemp("", "go-xmlstarlet-validate-schema-obj-*.xml")
 	if err != nil {
 		return ValidateResult{}, fmt.Errorf("create temp: %w", err)
 	}
-
 	defer func(f *os.File) {
 		_ = os.Remove(f.Name())
 	}(f)
 	defer func(f *os.File) {
 		_ = f.Close()
 	}(f)
-
-	_, err = f.Write(data)
-	if err != nil {
-		return ValidateResult{}, fmt.Errorf("write to temp file: %w", err)
+	if _, err = io.Copy(f, r); err != nil {
+		return ValidateResult{}, fmt.Errorf("copy from reader to temp file: %w", err)
 	}
-
 	return ValidateByFilenames(f.Name(), s.file.Name(), s.schemaType, stopOnFirstErr)
 }
 
@@ -133,10 +116,7 @@ func ValidateByFilenames(filename, schemaFilename string, schemaType SchemaType,
 
 	output := string(outputData)
 
-	problems, valid, err := parseValidateOutputLines(strings.Split(output, "\n"))
-	if err != nil {
-		return ValidateResult{}, err
-	}
+	problems, valid := parseValidateOutputLines(strings.Split(output, "\n"))
 
 	return ValidateResult{
 		Problems: problems,
@@ -144,26 +124,13 @@ func ValidateByFilenames(filename, schemaFilename string, schemaType SchemaType,
 	}, nil
 }
 
-func parseValidateOutputLines(lines []string) (problems []ResultProblem, valid bool, err error) {
+func parseValidateOutputLines(lines []string) (problems []ResultProblem, valid bool) {
 	for _, line := range lines {
-		if line == "" {
-			continue
-		}
-		isValid := strings.HasSuffix(line, " - valid")
-		isInvalid := strings.HasSuffix(line, " - invalid")
-
-		if isValid {
-			return nil, true, nil
+		if strings.HasSuffix(line, " - valid") {
+			return nil, true
 		}
 
-		if isInvalid {
-			valid = false
-			continue
-		}
-
-		line = strings.TrimPrefix(line, "file:///")
-
-		problemParts := strings.SplitN(line, ":", 4)
+		problemParts := strings.SplitN(strings.TrimPrefix(line, "file:///"), ":", 4)
 
 		// windows patch C:\ or c:/
 		if len(problemParts) == 4 {
@@ -175,7 +142,7 @@ func parseValidateOutputLines(lines []string) (problems []ResultProblem, valid b
 		}
 
 		if len(problemParts) != 3 {
-			return nil, false, fmt.Errorf("unexpeted line format")
+			continue
 		}
 
 		issue := strings.TrimSpace(problemParts[2])
@@ -188,11 +155,11 @@ func parseValidateOutputLines(lines []string) (problems []ResultProblem, valid b
 
 		whereLine, err := strconv.Atoi(whereLineParts[0])
 		if err != nil {
-			return nil, false, fmt.Errorf("unexpected line format - bad where line part - line: %w", err)
+			continue
 		}
 		whereCol, err := strconv.Atoi(whereLineParts[1])
 		if err != nil {
-			return nil, false, fmt.Errorf("unexpected line format - bad where line part - col: %w", err)
+			continue
 		}
 
 		problems = append(
@@ -206,5 +173,5 @@ func parseValidateOutputLines(lines []string) (problems []ResultProblem, valid b
 		)
 	}
 
-	return problems, valid, nil
+	return problems, valid
 }

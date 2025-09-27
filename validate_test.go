@@ -15,7 +15,6 @@ func Test_parseValidateOutputLines(t *testing.T) {
 		args         args
 		wantProblems []ResultProblem
 		wantValid    bool
-		wantErr      bool
 	}{
 		{
 			name: "catalog1",
@@ -34,7 +33,6 @@ data/xml/catalog.xml - invalid
 					Issue:    "Element 'countries': This element is not expected.",
 				},
 			},
-			wantErr:   false,
 			wantValid: false,
 		},
 		{
@@ -54,7 +52,6 @@ C:\data\xml\catalog.xml - invalid
 					Issue:    "Element 'countries': This element is not expected.",
 				},
 			},
-			wantErr:   false,
 			wantValid: false,
 		},
 		{
@@ -74,17 +71,12 @@ file:///C:/Users/afansv/AppData/Local/Temp/go-xmlstarlet-validate-schema-sch-204
 					Issue:    "Element '{http://www.w3.org/2001/XMLSchema}include': Failed to load the document 'file:///C:/Users/afansv/AppData/Local/Temp/warehouses.xsd' for inclusion.",
 				},
 			},
-			wantErr:   false,
 			wantValid: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotProblems, gotValid, err := parseValidateOutputLines(strings.Split(tt.args.output, "\n"))
-			if (err != nil) != tt.wantErr {
-				t.Errorf("parseValidateOutputLines() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			gotProblems, gotValid := parseValidateOutputLines(strings.Split(tt.args.output, "\n"))
 			if !reflect.DeepEqual(gotProblems, tt.wantProblems) {
 				t.Errorf("parseValidateOutputLines() gotProblems = %v, want %v", gotProblems, tt.wantProblems)
 			}

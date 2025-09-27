@@ -3,7 +3,7 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/afansv/go-xmlstarlet-validate.svg)](https://pkg.go.dev/github.com/afansv/go-xmlstarlet-validate)
 
 Go wrapper for [`xmlstarlet`](http://xmlstar.sourceforge.net/) that allows validating XML documents against **XSD**, **DTD**, or **RelaxNG** schemas.
-The package supports both file-based and stream-based validation and returns structured errors with precise positions.
+The package supports both filename-based and stream-based validation and returns structured errors with precise positions.
 
 ### Features
 
