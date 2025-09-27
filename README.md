@@ -34,18 +34,18 @@ If not, install it depending on your system:
 
 Most distributions provide it via their package manager:
 
-* **Debian / Ubuntu**
+* Debian / Ubuntu
 
   ```bash
   sudo apt-get update
   sudo apt-get install xmlstarlet
   ```
-* **Fedora**
+* Fedora
 
   ```bash
   sudo dnf install xmlstarlet
   ```
-* **Arch Linux**
+* Arch Linux
 
   ```bash
   sudo pacman -S xmlstarlet
@@ -63,19 +63,19 @@ brew install xmlstarlet
 
 Options:
 
-1. **Chocolatey**
+1. Chocolatey
 
    ```powershell
    choco install xmlstarlet
    ```
 
-2. **Scoop**
+2. Scoop
 
    ```powershell
    scoop install xmlstarlet
    ```
 
-3. **Manual**
+3. Manual
 
   * Download from [xmlstar.sourceforge.net](http://xmlstar.sourceforge.net/download.php)
   * Extract and add the folder with `xml.exe` (or `xmlstarlet.exe`) to your system `PATH`.
