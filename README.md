@@ -1,44 +1,93 @@
 # go-xmlstarlet-validate
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/afansv/go-xmlstarlet-validate.svg)](https://pkg.go.dev/github.com/afansv/go-xmlstarlet-validate)
+
 Go wrapper for [`xmlstarlet`](http://xmlstar.sourceforge.net/) that allows validating XML documents against **XSD**, **DTD**, or **RelaxNG** schemas.
 The package supports both file-based and stream-based validation and returns structured errors with precise positions.
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/afansv/go-xmlstarlet-validate.svg)](https://pkg.go.dev/github.com/afansv/go-xmlstarlet-validate)
-
 ### Features
 
-* Validate XML documents against:
-
-    * **XSD**
-    * **DTD**
-    * **RelaxNG**
+* Validate XML documents against **XSD**, **DTD** or **RelaxNG**
 * Validate by file names or `io.Reader` streams.
-* Collect structured validation errors:
-
-    * file name
-    * line number
-    * column number
-    * issue description
-* Option to stop at the first error (`-S` flag in `xmlstarlet`).
+* Collect structured validation errors
+* Option to stop at the first error
 
 ### Requirements
 
 * Go 1.20+
 * Installed [`xmlstarlet`](http://xmlstar.sourceforge.net/) binary available in `$PATH`.
 
-Check installation:
+---
+
+#### Installation of `xmlstarlet`
+
+This package requires the `xmlstarlet` command-line tool to be available in your `$PATH`.
+Check if it is already installed:
 
 ```bash
 xmlstarlet --version
 ```
 
+If not, install it depending on your system:
+
+##### Linux
+
+Most distributions provide it via their package manager:
+
+* **Debian / Ubuntu**
+
+  ```bash
+  sudo apt-get update
+  sudo apt-get install xmlstarlet
+  ```
+* **Fedora**
+
+  ```bash
+  sudo dnf install xmlstarlet
+  ```
+* **Arch Linux**
+
+  ```bash
+  sudo pacman -S xmlstarlet
+  ```
+
+##### macOS
+
+With [Homebrew](https://brew.sh/):
+
+```bash
+brew install xmlstarlet
+```
+
+##### Windows
+
+Options:
+
+1. **Chocolatey**
+
+   ```powershell
+   choco install xmlstarlet
+   ```
+
+2. **Scoop**
+
+   ```powershell
+   scoop install xmlstarlet
+   ```
+
+3. **Manual**
+
+  * Download from [xmlstar.sourceforge.net](http://xmlstar.sourceforge.net/download.php)
+  * Extract and add the folder with `xml.exe` (or `xmlstarlet.exe`) to your system `PATH`.
+
+
 ### Installation
 
 ```bash
-go get -u github.com/afansv/go-xmlstarlet-validate
+go get -u github.com/afansv/go-xmlstarlet-validate@latest
 ```
 
-### Example
+### Usage
 
 ```go
 package main
@@ -64,7 +113,7 @@ func main() {
 
 	// Validate XML string
 	xml := `<root><invalid/></root>`
-	result, err := validate.ValidateThroughSchemaFromReader(schema, strings.NewReader(xml), false)
+	result, err := validate.ValidateFromReaderAgainstSchema(schema, strings.NewReader(xml), false)
 	if err != nil {
 		panic(err)
 	}

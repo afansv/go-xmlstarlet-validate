@@ -36,12 +36,12 @@ type Schema struct {
 	schemaType SchemaType
 }
 
-func (s *Schema) Clean() error {
+func (s *Schema) Cleanup() error {
 	return os.Remove(s.file.Name())
 }
 
 // NewSchemaFromReader creates new Schema instance with SchemaType from io.Reader.
-// Remember to call Schema.Clean after stop working with Schema.
+// Remember to call Schema.Cleanup after stop working with Schema.
 func NewSchemaFromReader(r io.Reader, schemaType SchemaType) (*Schema, error) {
 	data, err := io.ReadAll(r)
 	if err != nil {
@@ -67,8 +67,8 @@ func NewSchemaFromReader(r io.Reader, schemaType SchemaType) (*Schema, error) {
 	}, nil
 }
 
-// ValidateThroughSchemaFromReader validates data from io.Reader through Schema
-func ValidateThroughSchemaFromReader(s *Schema, r io.Reader, stopOnFirstErr bool) (ValidateResult, error) {
+// ValidateFromReaderAgainstSchema validates data from io.Reader against Schema
+func ValidateFromReaderAgainstSchema(s *Schema, r io.Reader, stopOnFirstErr bool) (ValidateResult, error) {
 	data, err := io.ReadAll(r)
 	if err != nil {
 		return ValidateResult{}, fmt.Errorf("readall: %w", err)
@@ -78,11 +78,12 @@ func ValidateThroughSchemaFromReader(s *Schema, r io.Reader, stopOnFirstErr bool
 	if err != nil {
 		return ValidateResult{}, fmt.Errorf("create temp: %w", err)
 	}
-	defer func(f *os.File) {
-		_ = f.Close()
-	}(f)
+
 	defer func(f *os.File) {
 		_ = os.Remove(f.Name())
+	}(f)
+	defer func(f *os.File) {
+		_ = f.Close()
 	}(f)
 
 	_, err = f.Write(data)
@@ -90,11 +91,11 @@ func ValidateThroughSchemaFromReader(s *Schema, r io.Reader, stopOnFirstErr bool
 		return ValidateResult{}, fmt.Errorf("write to temp file: %w", err)
 	}
 
-	return ValidateFile(f.Name(), s.file.Name(), s.schemaType, stopOnFirstErr)
+	return ValidateByFilenames(f.Name(), s.file.Name(), s.schemaType, stopOnFirstErr)
 }
 
-// ValidateFile validates file by filename and schemaFilename
-func ValidateFile(filename, schemaFilename string, schemaType SchemaType, stopOnFirstErr bool) (ValidateResult, error) {
+// ValidateByFilenames validates file with filenames
+func ValidateByFilenames(filename, schemaFilename string, schemaType SchemaType, stopOnFirstErr bool) (ValidateResult, error) {
 	args := []string{
 		"val",
 		"-e",
