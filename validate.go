@@ -159,6 +159,8 @@ func ValidateByFilenames(filename, schemaFilename string, schemaType SchemaType,
 
 func parseValidateOutputLines(lines []string) (problems []ResultProblem, valid bool) {
 	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		
 		if strings.HasSuffix(line, " - valid") {
 			return nil, true
 		}
@@ -178,7 +180,7 @@ func parseValidateOutputLines(lines []string) (problems []ResultProblem, valid b
 			continue
 		}
 
-		issue := strings.TrimSpace(problemParts[2])
+		issue := problemParts[2]
 		whereFileName := problemParts[0]
 
 		whereLineParts := strings.Split(problemParts[1], ".")
