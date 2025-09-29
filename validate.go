@@ -52,12 +52,16 @@ const (
 const executable = "xmlstarlet"
 
 type Schema struct {
-	file       *os.File
+	filename   string
+	needClean  bool
 	schemaType SchemaType
 }
 
 func (s *Schema) Cleanup() error {
-	return os.Remove(s.file.Name())
+	if !s.needClean {
+		return nil
+	}
+	return os.Remove(s.filename)
 }
 
 // NewSchemaFromReader creates new Schema instance with SchemaType from io.Reader.
@@ -74,9 +78,18 @@ func NewSchemaFromReader(r io.Reader, schemaType SchemaType) (*Schema, error) {
 		return nil, fmt.Errorf("copy from reader to temp file: %w", err)
 	}
 	return &Schema{
-		file:       f,
+		filename:   f.Name(),
+		needClean:  true,
 		schemaType: schemaType,
 	}, nil
+}
+
+// NewSchemaFromFilename creates new Schema instance with SchemaType from filename.
+func NewSchemaFromFilename(filename string, schemaType SchemaType) *Schema {
+	return &Schema{
+		filename:   filename,
+		schemaType: schemaType,
+	}
 }
 
 // ValidateFromReader validates data from io.Reader against Schema
@@ -94,7 +107,7 @@ func ValidateFromReader(s *Schema, r io.Reader, stopOnFirstErr bool) (ValidateRe
 	if _, err = io.Copy(f, r); err != nil {
 		return ValidateResult{}, fmt.Errorf("copy from reader to temp file: %w", err)
 	}
-	return ValidateByFilenames(f.Name(), s.file.Name(), s.schemaType, stopOnFirstErr)
+	return ValidateByFilenames(f.Name(), s.filename, s.schemaType, stopOnFirstErr)
 }
 
 // ValidateByFilenames validates file with filenames
