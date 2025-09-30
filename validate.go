@@ -85,11 +85,14 @@ func NewSchemaFromReader(r io.Reader, schemaType SchemaType) (*Schema, error) {
 }
 
 // NewSchemaFromFilename creates new Schema instance with SchemaType from filename.
-func NewSchemaFromFilename(filename string, schemaType SchemaType) *Schema {
+func NewSchemaFromFilename(filename string, schemaType SchemaType) (*Schema, error) {
+	if _, err := os.Stat(filename); err != nil {
+		return nil, err
+	}
 	return &Schema{
 		filename:   filename,
 		schemaType: schemaType,
-	}
+	}, nil
 }
 
 // ValidateFromReader validates data from io.Reader against Schema
@@ -160,7 +163,7 @@ func ValidateByFilenames(filename, schemaFilename string, schemaType SchemaType,
 func parseValidateOutputLines(lines []string) (problems []ResultProblem, valid bool) {
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
-		
+
 		if strings.HasSuffix(line, " - valid") {
 			return nil, true
 		}
