@@ -49,7 +49,27 @@ const (
 	SchemaTypeRelaxNG
 )
 
-const executable = "xmlstarlet"
+const defaultExecutable = "xmlstarlet"
+
+type Option func(*options)
+
+type options struct {
+	executable string
+}
+
+func WithExecutable(path string) Option {
+	return func(o *options) {
+		o.executable = path
+	}
+}
+
+func getExecutable(opts []Option) string {
+	o := options{executable: defaultExecutable}
+	for _, opt := range opts {
+		opt(&o)
+	}
+	return o.executable
+}
 
 type Schema struct {
 	filename   string
@@ -96,7 +116,7 @@ func NewSchemaFromFilename(filename string, schemaType SchemaType) (*Schema, err
 }
 
 // ValidateFromReader validates data from io.Reader against Schema
-func ValidateFromReader(s *Schema, r io.Reader, stopOnFirstErr bool) (ValidateResult, error) {
+func ValidateFromReader(s *Schema, r io.Reader, stopOnFirstErr bool, opts ...Option) (ValidateResult, error) {
 	f, err := os.CreateTemp("", "go-xmlstarlet-validate-schema-obj-*.xml")
 	if err != nil {
 		return ValidateResult{}, fmt.Errorf("create temp: %w", err)
@@ -110,11 +130,11 @@ func ValidateFromReader(s *Schema, r io.Reader, stopOnFirstErr bool) (ValidateRe
 	if _, err = io.Copy(f, r); err != nil {
 		return ValidateResult{}, fmt.Errorf("copy from reader to temp file: %w", err)
 	}
-	return ValidateByFilenames(f.Name(), s.filename, s.schemaType, stopOnFirstErr)
+	return ValidateByFilenames(f.Name(), s.filename, s.schemaType, stopOnFirstErr, opts...)
 }
 
 // ValidateByFilenames validates file with filenames
-func ValidateByFilenames(filename, schemaFilename string, schemaType SchemaType, stopOnFirstErr bool) (ValidateResult, error) {
+func ValidateByFilenames(filename, schemaFilename string, schemaType SchemaType, stopOnFirstErr bool, opts ...Option) (ValidateResult, error) {
 	args := []string{
 		"val",
 		"-e",
@@ -143,7 +163,8 @@ func ValidateByFilenames(filename, schemaFilename string, schemaType SchemaType,
 
 	args = append(args, filename)
 
-	cmd := exec.Command(executable, args...)
+	execPath := getExecutable(opts)
+	cmd := exec.Command(execPath, args...)
 
 	outputData, err := cmd.CombinedOutput()
 	if err != nil && len(outputData) == 0 {
@@ -168,25 +189,30 @@ func parseValidateOutputLines(lines []string) (problems []ResultProblem, valid b
 			return nil, true
 		}
 
-		problemParts := strings.SplitN(strings.TrimPrefix(line, "file:///"), ":", 4)
+		// Find pattern: filename:line.col: message
+		// We need to find where line.col ends to get the message
 
-		// windows patch C:\ or c:/
-		if len(problemParts) == 4 {
-			if strings.HasPrefix(problemParts[1], "\\") || strings.HasPrefix(problemParts[1], "/") {
-				problemParts = []string{problemParts[0] + ":" + problemParts[1], problemParts[2], problemParts[3]}
-			} else {
-				problemParts = []string{problemParts[0], problemParts[1], problemParts[2] + ":" + problemParts[3]}
-			}
-		}
+		// Remove file:/// prefix if present
+		line = strings.TrimPrefix(line, "file:///")
 
-		if len(problemParts) != 3 {
+		// Find position of : that separates filename:line.col from message
+		// Look for : followed by space and then message
+		sepIdx := strings.Index(line, ": ")
+		if sepIdx < 0 {
 			continue
 		}
 
-		issue := problemParts[2]
-		whereFileName := problemParts[0]
+		message := strings.TrimSpace(line[sepIdx+2:])
+		beforeMessage := line[:sepIdx]
 
-		whereLineParts := strings.Split(problemParts[1], ".")
+		// Now find last : in beforeMessage to separate filename from line.col
+		lastColonIdx := strings.LastIndex(beforeMessage, ":")
+		if lastColonIdx < 0 {
+			continue
+		}
+
+		lineColPart := beforeMessage[lastColonIdx+1:]
+		whereLineParts := strings.Split(lineColPart, ".")
 		if len(whereLineParts) != 2 {
 			continue
 		}
@@ -200,13 +226,15 @@ func parseValidateOutputLines(lines []string) (problems []ResultProblem, valid b
 			continue
 		}
 
+		whereFileName := beforeMessage[:lastColonIdx]
+
 		problems = append(
 			problems,
 			ResultProblem{
 				Filename: whereFileName,
 				Line:     whereLine,
 				Col:      whereCol,
-				Issue:    issue,
+				Issue:    message,
 			},
 		)
 	}
